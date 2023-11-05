@@ -15,11 +15,11 @@ realpath() {
 
 project_dir=`realpath $0`
 
-local_maven=${HOME}/maven_rm
+local_maven=${HOME}/maven_os
 
 if [ ! -d ${local_maven} ]; then
 	mkdirs -p ${local_maven}
-	git clone git@github.com:rmalchow/maven.git ${local_maven}
+	git clone https://github.com/0sander/maven.git ${local_maven}
 fi
 
 cd ${local_maven}
