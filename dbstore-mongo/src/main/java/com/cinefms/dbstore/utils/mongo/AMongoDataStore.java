@@ -339,13 +339,13 @@ public abstract class AMongoDataStore implements DataStore {
 		GridFSBucket b = getBucket(dbName,bucket);
 		try {
 
-			GridFSFile f   = b.find(Filters.eq("_id", new ObjectId(id))).first();
+			GridFSFile f   = b.find(Filters.or(Filters.eq("metadata.ID", id), Filters.eq("filename", id))).first();
 			
 			if (f == null) {
 				return null;
 			}
 			
-			InputStream is = b.openDownloadStream(f.getObjectId());
+			InputStream is = b.openDownloadStream(f.getId());
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			IOUtils.copy(is, baos);
 			baos.flush();
