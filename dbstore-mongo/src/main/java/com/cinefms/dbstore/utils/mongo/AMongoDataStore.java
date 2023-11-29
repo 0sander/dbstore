@@ -339,7 +339,7 @@ public abstract class AMongoDataStore implements DataStore {
 		GridFSBucket b = getBucket(dbName,bucket);
 		try {
 
-			GridFSFile f   = b.find(Filters.or(Filters.eq("metadata.ID", id), Filters.eq("filename", id))).first();
+			GridFSFile f   = b.find(Filters.eq("_id", new ObjectId(id))).first();
 			
 			if (f == null) {
 				return null;
@@ -373,7 +373,7 @@ public abstract class AMongoDataStore implements DataStore {
 		for (Map.Entry<String, Object> e : binary.getMetaData().entrySet()) {
 			md.put(e.getKey(), e.getValue());
 		}
-		md.put("ID", binary.getId());		
+		md.put("ID", binary.getId());
 		GridFSUploadOptions o = new GridFSUploadOptions().chunkSizeBytes(1024).metadata(md);
         b.uploadFromStream(binary.getId(),binary.getInputStream(),o);
 	}
