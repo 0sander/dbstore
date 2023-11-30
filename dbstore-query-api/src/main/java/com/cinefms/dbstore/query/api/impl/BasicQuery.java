@@ -225,13 +225,13 @@ public class BasicQuery implements DBStoreQuery {
 				switch (comparator) {
 					case NIN:
 					case EXISTS:
-						if (!((List<?>) value).isEmpty() && value != null) {
+						if (!((List<?>) value).isEmpty() && ((List<?>) value) != null) {
 							out.append(' ');
 							out.append(((List<?>) value).stream().map(Object::toString).collect(Collectors.joining(", ", "[", "]")));
 						}
 						break;
 					default:
-						if (!((List<?>) value).isEmpty() && value != null) {
+						if (!((List<?>) value).isEmpty() && ((List<?>) value)!= null) {
 							out.append(' ');
 							out.append(((List<?>) value).stream().map(Object::toString).collect(Collectors.joining(", ", "[", "]")));
 						}
