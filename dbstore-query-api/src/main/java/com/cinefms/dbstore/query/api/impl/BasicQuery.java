@@ -1,13 +1,13 @@
 package com.cinefms.dbstore.query.api.impl;
 
-import com.cinefms.dbstore.query.api.DBStoreQuery;
-import com.cinefms.dbstore.query.api.exceptions.MalformedQueryException;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import com.cinefms.dbstore.query.api.DBStoreQuery;
+import com.cinefms.dbstore.query.api.exceptions.MalformedQueryException;
 
 
 public class BasicQuery implements DBStoreQuery {
@@ -225,14 +225,14 @@ public class BasicQuery implements DBStoreQuery {
 				switch (comparator) {
 					case NIN:
 					case EXISTS:
-						if (!((List) value).isEmpty()) {
+						if (!((List<?>) value).isEmpty()) {
 							out.append(' ');
-							out.append(((List) value).stream().collect(Collectors.joining(", ", "[", "]")));
+							out.append(((List<?>) value).stream().map(Object::toString).collect(Collectors.joining(", ", "[", "]")));
 						}
 						break;
 					default:
 						out.append(' ');
-						out.append(((List) value).stream().collect(Collectors.joining(", ", "[", "]")));
+						out.append(((List<?>) value).stream().map(Object::toString).collect(Collectors.joining(", ", "[", "]")));
 						break;
 				}
 			} else {
