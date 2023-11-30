@@ -231,8 +231,10 @@ public class BasicQuery implements DBStoreQuery {
 						}
 						break;
 					default:
-						out.append(' ');
-						out.append(((List<?>) value).stream().map(Object::toString).collect(Collectors.joining(", ", "[", "]")));
+						if (!((List<?>) value).isEmpty()) {
+							out.append(' ');
+							out.append(((List<?>) value).stream().map(Object::toString).collect(Collectors.joining(", ", "[", "]")));
+						}
 						break;
 				}
 			} else {
