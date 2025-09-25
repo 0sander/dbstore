@@ -3,22 +3,22 @@ package com.cinefms.dbstore.redis;
 import com.cinefms.dbstore.redis.util.LenientJsonCodec;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.redisson.Config;
-import org.redisson.Redisson;
-import org.redisson.SingleServerConfig;
-import org.redisson.codec.RedissonCodec;
+import org.redisson.api.RedissonClient;
+import org.redisson.config.Config;
+import org.redisson.config.SingleServerConfig;
+import org.redisson.codec.JsonJacksonCodec;
 import org.springframework.beans.factory.FactoryBean;
 
-public class RedissonFactory implements FactoryBean<Redisson> {
+public class RedissonFactory implements FactoryBean<RedissonClient> {
 
 	private static Log log = LogFactory.getLog(RedissonFactory.class);
 
 	private boolean singleton = false;
 	private String singleServer;
 	private String auth;
-	private RedissonCodec codec = new LenientJsonCodec();
+	private JsonJacksonCodec codec = new LenientJsonCodec();
 
-	public Redisson getObject() {
+	public RedissonClient getObject() {
 		log.info("### REDISSON FACTORY - CREATING ... ");
 		Config config = new Config();
 		SingleServerConfig ssc = config.useSingleServer().setAddress(singleServer).setRetryAttempts(3);
@@ -26,11 +26,11 @@ public class RedissonFactory implements FactoryBean<Redisson> {
 			ssc.setPassword(auth);
 		}
 		config.setCodec(codec);
-		return Redisson.create(config);
+		return org.redisson.Redisson.create(config);
 	}
 
 	public Class<?> getObjectType() {
-		return Redisson.class;
+		return RedissonClient.class;
 	}
 
 	@Override
@@ -58,11 +58,11 @@ public class RedissonFactory implements FactoryBean<Redisson> {
 		this.auth = auth;
 	}
 
-	public RedissonCodec getCodec() {
+	public JsonJacksonCodec getCodec() {
 		return codec;
 	}
 
-	public void setCodec(RedissonCodec codec) {
+	public void setCodec(JsonJacksonCodec codec) {
 		this.codec = codec;
 	}
 
