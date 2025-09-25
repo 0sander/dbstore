@@ -1,6 +1,7 @@
 package com.cinefms.dbstore.api;
 
 import java.util.List;
+import java.util.Map;
 
 import com.cinefms.dbstore.api.exceptions.DBStoreException;
 import com.cinefms.dbstore.query.api.DBStoreQuery;
@@ -30,5 +31,7 @@ public interface DataStore {
 	public DBStoreBinary getBinary(String dbName, String bucket, String id) throws DBStoreException;
 
 	<T extends DBStoreEntity> List<T> saveObjects(String db, List<T> objects);
+
+	<T extends DBStoreEntity> T updateObjectFields(String db, Class<T> clazz, String id, Map<String, Object> fields);
 
 }

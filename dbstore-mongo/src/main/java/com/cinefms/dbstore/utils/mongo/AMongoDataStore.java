@@ -45,6 +45,8 @@ import com.mongodb.client.gridfs.model.GridFSFile;
 import com.mongodb.client.gridfs.model.GridFSUploadOptions;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.IndexOptions;
+import com.mongodb.client.model.UpdateOptions;
+import com.mongodb.client.model.Updates;
 
 public abstract class AMongoDataStore implements DataStore {
 
@@ -376,6 +378,60 @@ public abstract class AMongoDataStore implements DataStore {
 		md.put("ID", binary.getId());
 		GridFSUploadOptions o = new GridFSUploadOptions().chunkSizeBytes(1024).metadata(md);
         b.uploadFromStream(binary.getId(),binary.getInputStream(),o);
+	}
+
+	@Override
+	@SuppressWarnings("unchecked")
+	public <T extends DBStoreEntity> T updateObjectFields(String db, Class<T> clazz, String id, Map<String, Object> fields) {
+		if (id == null || fields == null || fields.isEmpty()) {
+			return null;
+		}
+
+		List<DBStoreListener<?>> entityListeners = getListeners(clazz);
+		JacksonMongoCollection<T> coll = (JacksonMongoCollection<T>) getCollection(db, clazz);
+
+		// Get the old object for listener notifications
+		T old = coll.findOneById(id);
+		if (old == null) {
+			log.debug("No object found with id: " + id + " in class: " + clazz.getSimpleName());
+			return null;
+		}
+
+		// Fire beforeSave listeners
+		for (DBStoreListener listener : entityListeners) {
+			log.debug("firing 'beforeSave' for: " + clazz + " / " + id);
+			listener.beforeSave(db, old);
+		}
+
+		try {
+			// Build the update document
+			List<Bson> updateOperations = new ArrayList<>();
+			for (Map.Entry<String, Object> entry : fields.entrySet()) {
+				updateOperations.add(Updates.set(entry.getKey(), entry.getValue()));
+			}
+
+			// Perform atomic update
+			Bson updateDoc = Updates.combine(updateOperations);
+			UpdateOptions options = new UpdateOptions();
+			
+			// Use updateOne for atomic operation
+			coll.updateOne(Filters.eq("_id", id), updateDoc, options);
+
+			// Get the updated object
+			T updated = getObject(db, clazz, id);
+
+			// Fire updated listeners
+			for (DBStoreListener listener : entityListeners) {
+				log.debug("firing 'updated' for: " + clazz + " / " + id + " / " + listener.getClass());
+				listener.updated(db, old, updated);
+			}
+
+			return updated;
+
+		} catch (Exception e) {
+			log.error("Error updating fields for object with id: " + id, e);
+			throw new DBStoreException("Error updating fields for object with id: " + id, e);
+		}
 	}
 	
 }

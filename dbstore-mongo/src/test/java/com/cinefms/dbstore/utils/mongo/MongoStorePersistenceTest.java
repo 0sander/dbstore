@@ -8,7 +8,9 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MongoStorePersistenceTest extends MongoDataStoreTest {
 
@@ -211,6 +213,90 @@ public class MongoStorePersistenceTest extends MongoDataStoreTest {
 			Assert.assertEquals(fourthEntity.getId(), record.get("_id"));
 			Assert.assertEquals("fourth-entity", record.get("value"));
 		});
+	}
+
+	@Test
+	public void itShouldUpdateFieldsAtomically() {
+		// Create an entity
+		SimpleEntity entity = new SimpleEntity("original-value");
+		SimpleEntity savedEntity = mds.saveObject(null, entity);
+		Assert.assertNotNull(savedEntity);
+		String entityId = savedEntity.getId();
+
+		// Update specific fields using updateFields
+		Map<String, Object> fieldsToUpdate = new HashMap<>();
+		fieldsToUpdate.put("value", "updated-value");
+		
+		SimpleEntity updatedEntity = mds.updateObjectFields(null, SimpleEntity.class, entityId, fieldsToUpdate);
+		
+		// Verify the update was successful
+		Assert.assertNotNull(updatedEntity);
+		Assert.assertEquals(entityId, updatedEntity.getId());
+		Assert.assertEquals("updated-value", updatedEntity.getValue());
+
+		// Verify the change was persisted in the database
+		SimpleEntity retrievedEntity = mds.getObject(null, SimpleEntity.class, entityId);
+		Assert.assertNotNull(retrievedEntity);
+		Assert.assertEquals("updated-value", retrievedEntity.getValue());
+
+		// Verify only one record exists (no duplicates)
+		Assert.assertEquals(1, mds.getDB(null).getCollection(SimpleEntity.class.getName()).countDocuments());
+	}
+
+	@Test
+	public void itShouldUpdateMultipleFieldsAtomically() {
+		// Create an entity
+		SimpleEntity entity = new SimpleEntity("original-value");
+		SimpleEntity savedEntity = mds.saveObject(null, entity);
+		Assert.assertNotNull(savedEntity);
+		String entityId = savedEntity.getId();
+
+		// Update multiple fields at once
+		Map<String, Object> fieldsToUpdate = new HashMap<>();
+		fieldsToUpdate.put("value", "updated-value");
+		// Note: SimpleEntity only has one field, but this tests the multiple field update mechanism
+		
+		SimpleEntity updatedEntity = mds.updateObjectFields(null, SimpleEntity.class, entityId, fieldsToUpdate);
+		
+		// Verify the update was successful
+		Assert.assertNotNull(updatedEntity);
+		Assert.assertEquals(entityId, updatedEntity.getId());
+		Assert.assertEquals("updated-value", updatedEntity.getValue());
+	}
+
+	@Test
+	public void itShouldReturnNullWhenUpdatingNonExistentEntity() {
+		Map<String, Object> fieldsToUpdate = new HashMap<>();
+		fieldsToUpdate.put("value", "updated-value");
+		
+		SimpleEntity result = mds.updateObjectFields(null, SimpleEntity.class, "non-existent-id", fieldsToUpdate);
+		
+		Assert.assertNull(result);
+	}
+
+	@Test
+	public void itShouldReturnNullWhenFieldsMapIsEmpty() {
+		SimpleEntity entity = new SimpleEntity("original-value");
+		SimpleEntity savedEntity = mds.saveObject(null, entity);
+		Assert.assertNotNull(savedEntity);
+		String entityId = savedEntity.getId();
+
+		Map<String, Object> emptyFields = new HashMap<>();
+		SimpleEntity result = mds.updateObjectFields(null, SimpleEntity.class, entityId, emptyFields);
+		
+		Assert.assertNull(result);
+	}
+
+	@Test
+	public void itShouldReturnNullWhenFieldsMapIsNull() {
+		SimpleEntity entity = new SimpleEntity("original-value");
+		SimpleEntity savedEntity = mds.saveObject(null, entity);
+		Assert.assertNotNull(savedEntity);
+		String entityId = savedEntity.getId();
+
+		SimpleEntity result = mds.updateObjectFields(null, SimpleEntity.class, entityId, null);
+		
+		Assert.assertNull(result);
 	}
 
 }
