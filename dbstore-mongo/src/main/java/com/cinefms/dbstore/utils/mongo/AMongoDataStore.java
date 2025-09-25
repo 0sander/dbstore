@@ -23,6 +23,8 @@ import com.cinefms.dbstore.api.DBStoreBinary;
 import com.cinefms.dbstore.api.DBStoreEntity;
 import com.cinefms.dbstore.api.DBStoreListener;
 import com.cinefms.dbstore.api.DataStore;
+import com.cinefms.dbstore.api.FieldUpdate;
+import com.cinefms.dbstore.api.UpdateOperation;
 import com.cinefms.dbstore.api.annotations.Index;
 import com.cinefms.dbstore.api.annotations.Indexes;
 import com.cinefms.dbstore.api.annotations.Write;

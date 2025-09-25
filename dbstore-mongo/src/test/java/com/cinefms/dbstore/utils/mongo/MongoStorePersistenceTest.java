@@ -296,7 +296,7 @@ public class MongoStorePersistenceTest extends MongoDataStoreTest {
 		Assert.assertNotNull(savedEntity);
 		String entityId = savedEntity.getId();
 
-		SimpleEntity result = mds.updateObjectFields(null, SimpleEntity.class, entityId, null);
+		SimpleEntity result = mds.updateObjectFields(null, SimpleEntity.class, entityId, (Map<String, Object>) null);
 		
 		Assert.assertNull(result);
 	}
