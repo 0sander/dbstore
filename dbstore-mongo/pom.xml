@@ -7,24 +7,24 @@
     <parent>
         <groupId>com.cinefms.dbstore</groupId>
         <artifactId>dbstore</artifactId>
-        <version>0.10.12-SNAPSHOT</version>
+        <version>0.10.13-SNAPSHOT</version>
     </parent>
 
     <dependencies>
         <dependency>
             <groupId>com.cinefms.dbstore</groupId>
             <artifactId>dbstore-api</artifactId>
-            <version>0.10.12-SNAPSHOT</version>
+            <version>0.10.13-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.cinefms.dbstore</groupId>
             <artifactId>dbstore-query-mongo</artifactId>
-            <version>0.10.12-SNAPSHOT</version>
+            <version>0.10.13-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.cinefms.dbstore</groupId>
             <artifactId>dbstore-query-api</artifactId>
-            <version>0.10.12-SNAPSHOT</version>
+            <version>0.10.13-SNAPSHOT</version>
         </dependency>
         <!-- Explicitly add query-api for test compile so DBStoreQuery is available in signatures -->
 
