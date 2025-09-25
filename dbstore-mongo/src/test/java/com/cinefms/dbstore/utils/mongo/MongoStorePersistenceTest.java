@@ -1,7 +1,9 @@
 package com.cinefms.dbstore.utils.mongo;
 
+import com.cinefms.dbstore.api.FieldUpdate;
 import com.cinefms.dbstore.query.api.impl.BasicQuery;
 import com.cinefms.dbstore.utils.mongo.entities.SimpleEntity;
+import com.cinefms.dbstore.utils.mongo.entities.VersionedEntity;
 import com.cinefms.dbstore.utils.mongo.utils.AssertCollection;
 import org.bson.Document;
 import org.junit.Assert;
@@ -297,6 +299,95 @@ public class MongoStorePersistenceTest extends MongoDataStoreTest {
 		SimpleEntity result = mds.updateObjectFields(null, SimpleEntity.class, entityId, null);
 		
 		Assert.assertNull(result);
+	}
+
+	@Test
+	public void itShouldIncrementFieldAtomically() {
+		// Create a versioned entity
+		VersionedEntity entity = new VersionedEntity("test", 1, 5);
+		VersionedEntity savedEntity = mds.saveObject(null, entity);
+		Assert.assertNotNull(savedEntity);
+		String entityId = savedEntity.getId();
+
+		// Increment version field atomically
+		VersionedEntity updatedEntity = mds.incrementField(null, VersionedEntity.class, entityId, "version", 1);
+		
+		// Verify the increment was successful
+		Assert.assertNotNull(updatedEntity);
+		Assert.assertEquals(entityId, updatedEntity.getId());
+		Assert.assertEquals(2, updatedEntity.getVersion()); // 1 + 1 = 2
+		Assert.assertEquals(5, updatedEntity.getCounter()); // unchanged
+
+		// Verify the change was persisted in the database
+		VersionedEntity retrievedEntity = mds.getObject(null, VersionedEntity.class, entityId);
+		Assert.assertNotNull(retrievedEntity);
+		Assert.assertEquals(2, retrievedEntity.getVersion());
+	}
+
+	@Test
+	public void itShouldIncrementMultipleFieldsAtomically() {
+		// Create a versioned entity
+		VersionedEntity entity = new VersionedEntity("test", 1, 5);
+		VersionedEntity savedEntity = mds.saveObject(null, entity);
+		Assert.assertNotNull(savedEntity);
+		String entityId = savedEntity.getId();
+
+		// Increment multiple fields atomically using FieldUpdate
+		List<FieldUpdate> updates = Arrays.asList(
+			FieldUpdate.inc("version", 2),
+			FieldUpdate.inc("counter", -1)
+		);
+		
+		VersionedEntity updatedEntity = mds.updateObjectFields(null, VersionedEntity.class, entityId, updates);
+		
+		// Verify both increments were successful
+		Assert.assertNotNull(updatedEntity);
+		Assert.assertEquals(entityId, updatedEntity.getId());
+		Assert.assertEquals(3, updatedEntity.getVersion()); // 1 + 2 = 3
+		Assert.assertEquals(4, updatedEntity.getCounter()); // 5 - 1 = 4
+	}
+
+	@Test
+	public void itShouldSetAndIncrementFieldsAtomically() {
+		// Create a versioned entity
+		VersionedEntity entity = new VersionedEntity("test", 1, 5);
+		VersionedEntity savedEntity = mds.saveObject(null, entity);
+		Assert.assertNotNull(savedEntity);
+		String entityId = savedEntity.getId();
+
+		// Set name and increment version atomically
+		List<FieldUpdate> updates = Arrays.asList(
+			FieldUpdate.set("name", "updated"),
+			FieldUpdate.inc("version", 1)
+		);
+		
+		VersionedEntity updatedEntity = mds.updateObjectFields(null, VersionedEntity.class, entityId, updates);
+		
+		// Verify both operations were successful
+		Assert.assertNotNull(updatedEntity);
+		Assert.assertEquals(entityId, updatedEntity.getId());
+		Assert.assertEquals("updated", updatedEntity.getName());
+		Assert.assertEquals(2, updatedEntity.getVersion()); // 1 + 1 = 2
+		Assert.assertEquals(5, updatedEntity.getCounter()); // unchanged
+	}
+
+	@Test
+	public void itShouldUnsetFieldAtomically() {
+		// Create a versioned entity
+		VersionedEntity entity = new VersionedEntity("test", 1, 5);
+		VersionedEntity savedEntity = mds.saveObject(null, entity);
+		Assert.assertNotNull(savedEntity);
+		String entityId = savedEntity.getId();
+
+		// Unset the name field atomically
+		VersionedEntity updatedEntity = mds.unsetField(null, VersionedEntity.class, entityId, "name");
+		
+		// Verify the field was unset
+		Assert.assertNotNull(updatedEntity);
+		Assert.assertEquals(entityId, updatedEntity.getId());
+		Assert.assertNull(updatedEntity.getName());
+		Assert.assertEquals(1, updatedEntity.getVersion()); // unchanged
+		Assert.assertEquals(5, updatedEntity.getCounter()); // unchanged
 	}
 
 }

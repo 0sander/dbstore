@@ -433,5 +433,119 @@ public abstract class AMongoDataStore implements DataStore {
 			throw new DBStoreException("Error updating fields for object with id: " + id, e);
 		}
 	}
+
+	@Override
+	@SuppressWarnings("unchecked")
+	public <T extends DBStoreEntity> T updateObjectFields(String db, Class<T> clazz, String id, List<FieldUpdate> fieldUpdates) {
+		if (id == null || fieldUpdates == null || fieldUpdates.isEmpty()) {
+			return null;
+		}
+
+		List<DBStoreListener<?>> entityListeners = getListeners(clazz);
+		JacksonMongoCollection<T> coll = (JacksonMongoCollection<T>) getCollection(db, clazz);
+
+		// Get the old object for listener notifications
+		T old = coll.findOneById(id);
+		if (old == null) {
+			log.debug("No object found with id: " + id + " in class: " + clazz.getSimpleName());
+			return null;
+		}
+
+		// Fire beforeSave listeners
+		for (DBStoreListener listener : entityListeners) {
+			log.debug("firing 'beforeSave' for: " + clazz + " / " + id);
+			listener.beforeSave(db, old);
+		}
+
+		try {
+			// Build the update document using different MongoDB operators
+			List<Bson> updateOperations = new ArrayList<>();
+			for (FieldUpdate fieldUpdate : fieldUpdates) {
+				Bson operation = createUpdateOperation(fieldUpdate);
+				if (operation != null) {
+					updateOperations.add(operation);
+				}
+			}
+
+			if (updateOperations.isEmpty()) {
+				log.debug("No valid update operations found");
+				return old;
+			}
+
+			// Perform atomic update
+			Bson updateDoc = Updates.combine(updateOperations);
+			UpdateOptions options = new UpdateOptions();
+			
+			// Use updateOne for atomic operation
+			coll.updateOne(Filters.eq("_id", id), updateDoc, options);
+
+			// Get the updated object
+			T updated = getObject(db, clazz, id);
+
+			// Fire updated listeners
+			for (DBStoreListener listener : entityListeners) {
+				log.debug("firing 'updated' for: " + clazz + " / " + id + " / " + listener.getClass());
+				listener.updated(db, old, updated);
+			}
+
+			return updated;
+
+		} catch (Exception e) {
+			log.error("Error updating fields for object with id: " + id, e);
+			throw new DBStoreException("Error updating fields for object with id: " + id, e);
+		}
+	}
+
+	/**
+	 * Creates a MongoDB update operation based on the FieldUpdate type
+	 */
+	private Bson createUpdateOperation(FieldUpdate fieldUpdate) {
+		String fieldName = fieldUpdate.getFieldName();
+		UpdateOperation operation = fieldUpdate.getOperation();
+		Object value = fieldUpdate.getValue();
+
+		switch (operation) {
+			case SET:
+				return Updates.set(fieldName, value);
+			case INC:
+				return Updates.inc(fieldName, (Number) value);
+			case UNSET:
+				return Updates.unset(fieldName);
+			case PUSH:
+				return Updates.push(fieldName, value);
+			case PULL:
+				return Updates.pull(fieldName, value);
+			case ADD_TO_SET:
+				return Updates.addToSet(fieldName, value);
+			case MUL:
+				return Updates.mul(fieldName, (Number) value);
+			case MIN:
+				return Updates.min(fieldName, value);
+			case MAX:
+				return Updates.max(fieldName, value);
+			case RENAME:
+				return Updates.rename(fieldName, (String) value);
+			case SET_ON_INSERT:
+				return Updates.setOnInsert(fieldName, value);
+			default:
+				log.warn("Unknown update operation: " + operation);
+				return null;
+		}
+	}
+
+	@Override
+	public <T extends DBStoreEntity> T incrementField(String db, Class<T> clazz, String id, String fieldName, Number increment) {
+		return updateObjectFields(db, clazz, id, Collections.singletonList(FieldUpdate.inc(fieldName, increment)));
+	}
+
+	@Override
+	public <T extends DBStoreEntity> T setField(String db, Class<T> clazz, String id, String fieldName, Object value) {
+		return updateObjectFields(db, clazz, id, Collections.singletonList(FieldUpdate.set(fieldName, value)));
+	}
+
+	@Override
+	public <T extends DBStoreEntity> T unsetField(String db, Class<T> clazz, String id, String fieldName) {
+		return updateObjectFields(db, clazz, id, Collections.singletonList(FieldUpdate.unset(fieldName)));
+	}
 	
 }

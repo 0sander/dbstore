@@ -34,4 +34,13 @@ public interface DataStore {
 
 	<T extends DBStoreEntity> T updateObjectFields(String db, Class<T> clazz, String id, Map<String, Object> fields);
 
+	<T extends DBStoreEntity> T updateObjectFields(String db, Class<T> clazz, String id, List<FieldUpdate> fieldUpdates);
+
+	// Convenience methods for common atomic operations
+	<T extends DBStoreEntity> T incrementField(String db, Class<T> clazz, String id, String fieldName, Number increment);
+
+	<T extends DBStoreEntity> T setField(String db, Class<T> clazz, String id, String fieldName, Object value);
+
+	<T extends DBStoreEntity> T unsetField(String db, Class<T> clazz, String id, String fieldName);
+
 }
