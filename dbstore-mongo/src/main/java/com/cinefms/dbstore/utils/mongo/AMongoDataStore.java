@@ -168,12 +168,18 @@ public abstract class AMongoDataStore implements DataStore {
 				.find(fqtl.translate(query))
 				.sort(fqtl.translateOrderBy(query));
 
-		int skip = query.getStart();
+		int skip = 0;
+		int max = 0;
+		
+		if (query != null) {
+			skip = query.getStart();
+			max = query.getMax();
+		}
+		
 		if (skip > 0) {
 			f = f.skip(skip);
 		}
 
-		int max = query.getMax();
 		if (max > 0 && max < Integer.MAX_VALUE) {
 			f = f.limit(max);
 		}

@@ -390,4 +390,17 @@ public class MongoStorePersistenceTest extends MongoDataStoreTest {
 		Assert.assertEquals(5, updatedEntity.getCounter()); // unchanged
 	}
 
+	@Test
+	public void itShouldHandleNullQuery() {
+		SimpleEntity entity = new SimpleEntity("test-value");
+		mds.saveObject(null, entity);
+
+		// Test that null query doesn't crash
+		List<SimpleEntity> results = mds.findObjects(null, SimpleEntity.class, null);
+		
+		// Should return all objects (empty filter)
+		Assert.assertNotNull(results);
+		Assert.assertTrue("Should find at least one object", results.size() >= 1);
+	}
+
 }

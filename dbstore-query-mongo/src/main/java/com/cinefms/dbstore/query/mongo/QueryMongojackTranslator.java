@@ -20,6 +20,10 @@ public class QueryMongojackTranslator {
 	private static final Log LOGGER = LogFactory.getLog(QueryMongojackTranslator.class);
 
 	public Bson translate(DBStoreQuery in) {
+		if (in == null) {
+			return Filters.empty();
+		}
+		
 		Bson q = null;
 		if (in.getField() != null) {
 			switch (in.getComparator()) {
@@ -80,20 +84,31 @@ public class QueryMongojackTranslator {
 			if (n != null && !n.isEmpty()) {
 				List<Bson> mq = new ArrayList<>();
 				for (DBStoreQuery fq : n) {
-					mq.add(translate(fq));
+					Bson translated = translate(fq);
+					if (translated != null) {
+						mq.add(translated);
+					}
 				}
-				if (in.getOperator() == OPERATOR.AND) {
-					q = Filters.and(mq);
-				}
-				if (in.getOperator() == OPERATOR.OR) {
-					q = Filters.or(mq);
+				if (!mq.isEmpty()) {
+					if (in.getOperator() == OPERATOR.AND) {
+						q = Filters.and(mq);
+					}
+					if (in.getOperator() == OPERATOR.OR) {
+						q = Filters.or(mq);
+					}
 				}
 			}
 		}
-		return q;
+		
+		// Return empty filter if no valid filter was created
+		return q != null ? q : Filters.empty();
 	}
 
 	public Bson translateOrderBy(DBStoreQuery query) {
+		if (query == null) {
+			return null;
+		}
+		
 		List<OrderBy> orderBy = query.getOrderBy();
 
 		if (orderBy == null || orderBy.isEmpty()) {
