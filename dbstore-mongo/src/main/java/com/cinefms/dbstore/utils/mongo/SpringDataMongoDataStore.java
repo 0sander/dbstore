@@ -29,6 +29,11 @@ public class SpringDataMongoDataStore extends AMongoDataStore {
 			return getMongo().getDatabase((getDbPrefix() == null ? "" : (getDbPrefix() + "_")) + db);
 		}
 	}
+	
+	@Override
+	public MongoClient getMongoClient() {
+		return getMongo();
+	}
 
 	public MongoClient getMongo() {
 		return mongo;

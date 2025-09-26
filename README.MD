@@ -1,14 +1,14 @@
 **DBSTORE**
 =================
 
-this is a simple abstraction / utility layer on top of mongo db.  from version 0.9, these are the minimum requirements:
+this is a simple abstraction / utility layer on top of mongo db.  from version 0.10, these are the minimum requirements:
 
-- Spring Framework 5.3 (Spring Boot 2.5)
-- MongoDB Driver 4.2
-- Mongojack 4.2
-- MongoDB 4.4
+- Spring Framework 6.1 (Spring Boot 3.0+)
+- MongoDB Driver 5.0
+- Mongojack 5.0.3
+- MongoDB 4.4+ (with replica set for transaction support)
 
-from version 0.10 added compatibility for Spring Framework 6.0 (Spring Boot 3.0).
+from version 0.10.13+ added full transaction support and atomic field update operations.
 
 it contains a few basic classes that might help, specifically:
 
@@ -41,6 +41,92 @@ and, for saving:
 
 note that your objects have to extend `DBStoreEntity`.
 
+***Transaction Support***
+
+from version 0.10.13+, the DataStore supports MongoDB transactions. transactions require a MongoDB replica set or sharded cluster:
+
+```java
+// Execute operations in a transaction
+String result = dataStore.executeInTransaction("database", () -> {
+    dataStore.saveObject("database", entity1);
+    dataStore.saveObject("database", entity2);
+    return "success";
+});
+
+// With transaction context for session-aware operations
+dataStore.executeInTransaction("database", (context) -> {
+    context.saveObject(entity1);
+    context.updateObjectFields(Entity.class, id, updates);
+    return result;
+});
+
+// Check if transactions are supported
+if (dataStore.supportsTransactions()) {
+    // Use transaction operations
+}
+```
+
+***Atomic Field Updates***
+
+the DataStore now supports atomic field update operations using MongoDB's atomic operators:
+
+```java
+// Increment a field atomically
+dataStore.incrementField("database", Entity.class, id, "counter", 5);
+
+// Set a field
+dataStore.setField("database", Entity.class, id, "status", "active");
+
+// Unset a field
+dataStore.unsetField("database", Entity.class, id, "tempField");
+
+// Complex updates with multiple operations
+List<FieldUpdate> updates = Arrays.asList(
+    FieldUpdate.inc("counter", 1),
+    FieldUpdate.set("status", "updated"),
+    FieldUpdate.push("tags", "new-tag"),
+    FieldUpdate.addToSet("categories", "premium")
+);
+dataStore.updateObjectFields("database", Entity.class, id, updates);
+```
+
+available atomic operations:
+- `FieldUpdate.set(field, value)` - Set a field value
+- `FieldUpdate.inc(field, number)` - Increment a numeric field
+- `FieldUpdate.unset(field)` - Remove a field
+- `FieldUpdate.push(field, value)` - Add value to array
+- `FieldUpdate.pull(field, value)` - Remove value from array
+- `FieldUpdate.addToSet(field, value)` - Add unique value to array
+- `FieldUpdate.mul(field, number)` - Multiply numeric field
+- `FieldUpdate.min(field, value)` - Set minimum value
+- `FieldUpdate.max(field, value)` - Set maximum value
+- `FieldUpdate.rename(field, newName)` - Rename a field
+- `FieldUpdate.setOnInsert(field, value)` - Set value only on insert
+
+***Spring Transaction Integration***
+
+the DataStore integrates with Spring's transaction management:
+
+```java
+@Transactional
+public void businessMethod() {
+    // All operations automatically participate in transaction
+    dataStore.saveObject("database", entity);
+    dataStore.updateObjectFields("database", Entity.class, id, updates);
+}
+```
+
+configuration:
+```java
+@Configuration
+@EnableTransactionManagement
+public class DBStoreConfig {
+    @Bean
+    public PlatformTransactionManager transactionManager(DataStore dataStore) {
+        return new DBStoreTransactionManager(dataStore, "defaultDatabase");
+    }
+}
+```
 
 ***DbStoreListener***
 

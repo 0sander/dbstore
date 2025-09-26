@@ -2,6 +2,7 @@ package com.cinefms.dbstore.utils.mongo;
 
 import com.cinefms.dbstore.api.DataStore;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -64,6 +65,12 @@ public class MongoDataStore extends AMongoDataStore implements DataStore {
 		log.debug("== ");
 		log.debug("============================================================");
 		return out;
+	}
+	
+	@Override
+	public MongoClient getMongoClient() {
+		MongoService ms = getMongoService();
+		return ms.getClient();
 	}
 
 	public boolean isCheckUpdates() {

@@ -2,6 +2,7 @@ package com.cinefms.dbstore.api;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import com.cinefms.dbstore.api.exceptions.DBStoreException;
 import com.cinefms.dbstore.query.api.DBStoreQuery;
@@ -42,5 +43,47 @@ public interface DataStore {
 	<T extends DBStoreEntity> T setField(String db, Class<T> clazz, String id, String fieldName, Object value);
 
 	<T extends DBStoreEntity> T unsetField(String db, Class<T> clazz, String id, String fieldName);
+
+	// Transaction support methods
+	
+	/**
+	 * Execute operations within a transaction
+	 * @param db Database name
+	 * @param operations Operations to execute within the transaction
+	 * @return Result of the operations
+	 * @throws DBStoreException if transaction fails
+	 */
+	<T> T executeInTransaction(String db, Supplier<T> operations) throws DBStoreException;
+	
+	/**
+	 * Execute operations within a transaction (void return)
+	 * @param db Database name
+	 * @param operations Operations to execute within the transaction
+	 * @throws DBStoreException if transaction fails
+	 */
+	void executeInTransaction(String db, Runnable operations) throws DBStoreException;
+	
+	/**
+	 * Check if transactions are supported by this DataStore implementation
+	 * @return true if transactions are supported
+	 */
+	boolean supportsTransactions();
+	
+	/**
+	 * Execute operations within a transaction with access to transaction context
+	 * @param db Database name
+	 * @param operations Operations to execute with transaction context
+	 * @return Result of the operations
+	 * @throws DBStoreException if transaction fails
+	 */
+	<T> T executeInTransaction(String db, java.util.function.Function<DBStoreTransactionContext, T> operations) throws DBStoreException;
+	
+	/**
+	 * Execute operations within a transaction with access to transaction context (void return)
+	 * @param db Database name
+	 * @param operations Operations to execute with transaction context
+	 * @throws DBStoreException if transaction fails
+	 */
+	void executeInTransaction(String db, java.util.function.Consumer<DBStoreTransactionContext> operations) throws DBStoreException;
 
 }
